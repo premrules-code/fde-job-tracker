@@ -25,8 +25,12 @@ app = FastAPI(
 
 # Serve static frontend files
 STATIC_DIR = Path(__file__).parent / "static"
+logger.info(f"Static directory path: {STATIC_DIR}, exists: {STATIC_DIR.exists()}")
 if STATIC_DIR.exists():
-    app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+    logger.info(f"Static directory contents: {list(STATIC_DIR.iterdir())}")
+    if (STATIC_DIR / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
+        logger.info("Mounted /assets")
 
 # CORS middleware for React frontend
 import os
