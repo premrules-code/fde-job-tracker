@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { Box, Flex, Heading, Text, Button, TextField, Tabs, Container, Badge, Spinner, Progress, Dialog } from '@radix-ui/themes';
+import { Box, Flex, Heading, Text, Button, TextField, Tabs, Container, Badge, Spinner, Progress, Dialog, DropdownMenu, AlertDialog } from '@radix-ui/themes';
 import {
   Search,
   RefreshCw,
@@ -8,6 +8,9 @@ import {
   BarChart3,
   Calendar,
   Command,
+  Rss,
+  ChevronDown,
+  Plus,
 } from 'lucide-react';
 import {
   getJobs,
@@ -16,7 +19,9 @@ import {
   getCompanies,
   getSources,
   triggerScrape,
+  triggerRSSScrape,
   getScrapeProgress,
+  addRSSFeed,
   type Job,
   type ScrapeProgress,
 } from './api';

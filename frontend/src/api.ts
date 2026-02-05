@@ -136,3 +136,30 @@ export async function getScrapeProgress(): Promise<ScrapeProgress> {
   const { data } = await api.get('/scrape/progress');
   return data;
 }
+
+// RSS Feed Scraping
+export interface RSSFeed {
+  url: string;
+  source: string;
+  name: string;
+}
+
+export interface RSSFeedsResponse {
+  rss_app_feeds: RSSFeed[];
+  custom_feeds: string[];
+}
+
+export async function getRSSFeeds(): Promise<RSSFeedsResponse> {
+  const { data } = await api.get('/rss/feeds');
+  return data;
+}
+
+export async function addRSSFeed(feedUrl: string, sourceName = 'linkedin_rss'): Promise<{ status: string; message: string }> {
+  const { data } = await api.post('/rss/feeds', { feed_url: feedUrl, source_name: sourceName });
+  return data;
+}
+
+export async function triggerRSSScrape(days = 30, location = 'San Francisco'): Promise<{ status: string; message: string }> {
+  const { data } = await api.post('/rss/scrape', null, { params: { days, location } });
+  return data;
+}
