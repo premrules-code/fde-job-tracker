@@ -9,20 +9,83 @@ from .base_scraper import BaseScraper, JobListing
 
 logger = logging.getLogger(__name__)
 
-# Companies known to use Lever for FDE roles
+# Companies known to use Lever for FDE/Solutions Engineer/Field Engineer roles
 LEVER_COMPANIES = {
-    "salesforce": "salesforce",
+    # AI/ML Companies
+    "anthropic": "anthropic",
+    "openai": "openai",
+    "cohere": "cohere",
+    "huggingface": "huggingface",
+    "scale-ai": "scaleai",
+    "weights-biases": "wandb",
+    "anyscale": "anyscale",
+    "modal": "modal",
+    "replicate": "replicate",
+    "together-ai": "togetherai",
+    "fireworks-ai": "fireworks-ai",
+    "mistral-ai": "mistralai",
+    "perplexity": "perplexity-ai",
+    "cursor": "anysphere",
+
+    # Data/Infrastructure
+    "databricks": "databricks",
+    "snowflake": "snowflake",
+    "fivetran": "fivetran",
+    "dbt-labs": "daboratoriesb",
+    "airbyte": "airbyte",
+    "clickhouse": "clickhouse",
+    "timescale": "timescale",
+    "planetscale": "planetscale",
+    "neon": "neondatabase",
+    "supabase": "supabase",
+    "vercel": "vercel",
+    "netlify": "netlify",
+    "railway": "railway",
+    "render": "render",
+
+    # Developer Tools
     "postman": "postman",
-    "gigaml": "gigaml",
-    "further-ai": "furtherai",
-    "simple-ai": "simpleai",
-    "bland-ai": "bland",
-    "first-resonance": "firstresonance",
-    "civilgrid": "civilgrid",
+    "github": "github",
+    "gitlab": "gitlab",
+    "hashicorp": "hashicorp",
+    "datadog": "datadog",
+    "grafana": "grafana",
+    "launchdarkly": "launchdarkly",
+    "retool": "retool",
+    "linear": "linear",
+    "notion": "notionhq",
+    "figma": "figma",
+    "loom": "loom",
+
+    # Enterprise/Sales Tools
+    "salesforce": "salesforce",
+    "stripe": "stripe",
+    "plaid": "plaid",
+    "brex": "brex",
+    "ramp": "ramp",
+    "mercury": "mercury",
+    "rippling": "rippling",
+    "lattice": "lattice",
+    "gusto": "gusto",
+
+    # Other Tech Companies
+    "palantir": "palantir",
+    "flexport": "flexport",
+    "samsara": "samsara",
+    "relativity-space": "relativityspace",
+    "airtable": "airtable",
+    "asana": "asana",
+    "amplitude": "amplitude",
+    "mixpanel": "mixpanel",
+    "segment": "segment",
+
+    # Startups with FDE roles
     "orb": "withorb",
     "krew": "krew",
     "variance": "variance",
-    "serval": "serval",
+    "bland-ai": "bland",
+    "vapi": "vapi",
+    "elevenlabs": "elevenlabs",
 }
 
 

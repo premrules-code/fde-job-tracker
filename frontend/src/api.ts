@@ -163,3 +163,14 @@ export async function triggerRSSScrape(days = 30, location = 'San Francisco'): P
   const { data } = await api.post('/rss/scrape', null, { params: { days, location } });
   return data;
 }
+
+// Lever API Scraping
+export async function triggerLeverScrape(location = 'San Francisco Bay Area', maxResults = 100): Promise<{ status: string; message: string }> {
+  const { data } = await api.post('/lever/scrape', null, { params: { location, max_results: maxResults } });
+  return data;
+}
+
+export async function getLeverCompanies(): Promise<{ total_companies: number; companies: string[] }> {
+  const { data } = await api.get('/lever/companies');
+  return data;
+}

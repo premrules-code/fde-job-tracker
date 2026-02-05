@@ -13,7 +13,7 @@ import logging
 from models import Job, SkillFrequency, ScraperLog, get_db, init_db, SessionLocal
 from job_scraper import job_scraper
 from jobspy_scraper import run_jobspy_scrape
-from scrapers import rss_scraper
+from scrapers import rss_scraper, LeverScraper
 from skill_extractor import skill_extractor
 
 logging.basicConfig(level=logging.INFO)
@@ -602,6 +602,156 @@ def run_rss_scrape_with_progress(location: str, days: int):
         }
     finally:
         db.close()
+
+
+# Lever API Scraping Endpoint
+
+lever_scraper = LeverScraper()
+
+@app.post("/api/lever/scrape")
+async def trigger_lever_scrape(
+    background_tasks: BackgroundTasks,
+    location: str = Query("San Francisco Bay Area", description="Location to search"),
+    max_results: int = Query(100, description="Maximum results to fetch"),
+):
+    """Trigger a scrape using Lever API (searches 60+ company career pages)."""
+    global scrape_progress
+
+    if scrape_progress["status"] == "running":
+        return ScrapeResponse(
+            status="running",
+            message="Scrape already in progress",
+            results=scrape_progress,
+        )
+
+    # Reset progress
+    scrape_progress = {
+        "status": "running",
+        "step": "Starting Lever API scrape...",
+        "progress": 0,
+        "total": 100,
+        "jobs_found": 0,
+        "jobs_added": 0,
+        "current_job": "",
+    }
+
+    background_tasks.add_task(run_lever_scrape_with_progress, location, max_results)
+
+    return ScrapeResponse(
+        status="started",
+        message="Lever scrape started in background. Poll /api/scrape/progress for updates.",
+        results=scrape_progress,
+    )
+
+
+def run_lever_scrape_with_progress(location: str, max_results: int):
+    """Run Lever API scrape with progress updates."""
+    global scrape_progress
+    db = SessionLocal()
+
+    try:
+        logger.info(f"Starting Lever API scrape for {location}...")
+        scrape_progress["step"] = "Fetching jobs from Lever company pages..."
+
+        # Get jobs from Lever scraper
+        jobs = lever_scraper.search_jobs(
+            query="forward deployed engineer",
+            location=location,
+            max_results=max_results,
+        )
+
+        scrape_progress["jobs_found"] = len(jobs)
+        scrape_progress["progress"] = 30
+
+        jobs_added = 0
+        total_jobs = len(jobs)
+
+        for idx, job_listing in enumerate(jobs):
+            try:
+                # Check if job already exists
+                existing = db.query(Job).filter(Job.job_url == job_listing.job_url).first()
+                if existing:
+                    continue
+
+                # Get full job details
+                details = lever_scraper.get_job_details(job_listing.job_url)
+                raw_desc = ""
+                if details:
+                    raw_desc = details.get("raw_description", "")
+
+                # Extract skills from description
+                skills = {}
+                if raw_desc:
+                    skills = skill_extractor.extract_skills(raw_desc)
+
+                # Create job record
+                job = Job(
+                    title=job_listing.title,
+                    company=job_listing.company,
+                    location=job_listing.location,
+                    job_url=job_listing.job_url,
+                    apply_url=job_listing.apply_url,
+                    source="lever",
+                    date_posted=job_listing.date_posted,
+                    date_scraped=datetime.utcnow(),
+                    raw_description=raw_desc,
+                    required_skills=skills.get("backend", []) + skills.get("frontend", []),
+                    technologies=skills.get("cloud", []),
+                    ai_ml_keywords=skills.get("ai", []) + skills.get("ml", []),
+                    relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
+                    is_active=True,
+                )
+
+                db.add(job)
+                jobs_added += 1
+
+                # Update progress
+                progress_pct = 30 + int((idx + 1) / total_jobs * 60) if total_jobs > 0 else 90
+                scrape_progress["step"] = f"Processing Lever jobs ({idx + 1}/{total_jobs})..."
+                scrape_progress["progress"] = progress_pct
+                scrape_progress["current_job"] = f"{job_listing.title[:30]} @ {job_listing.company}"
+                scrape_progress["jobs_added"] = jobs_added
+
+            except Exception as e:
+                logger.error(f"Error processing Lever job: {e}")
+                continue
+
+        db.commit()
+
+        scrape_progress = {
+            "status": "completed",
+            "step": "Done!",
+            "progress": 100,
+            "total": 100,
+            "jobs_found": len(jobs),
+            "jobs_added": jobs_added,
+            "current_job": "",
+        }
+        logger.info(f"Lever scrape completed: {jobs_added} jobs added from {len(jobs)} found")
+
+    except Exception as e:
+        logger.error(f"Lever scrape failed: {e}")
+        scrape_progress = {
+            "status": "failed",
+            "step": f"Error: {str(e)}",
+            "progress": 0,
+            "total": 0,
+            "jobs_found": 0,
+            "jobs_added": 0,
+            "current_job": "",
+        }
+    finally:
+        db.close()
+
+
+@app.get("/api/lever/companies")
+async def get_lever_companies():
+    """Get list of companies being searched on Lever."""
+    from scrapers.lever_scraper import LEVER_COMPANIES
+    return {
+        "total_companies": len(LEVER_COMPANIES),
+        "companies": list(LEVER_COMPANIES.keys()),
+    }
 
 
 # Serve frontend for all non-API routes

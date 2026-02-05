@@ -19,9 +19,8 @@ import {
   getCompanies,
   getSources,
   triggerScrape,
-  triggerRSSScrape,
+  triggerLeverScrape,
   getScrapeProgress,
-  addRSSFeed,
   type Job,
   type ScrapeProgress,
 } from './api';
@@ -86,12 +85,12 @@ function AppContent() {
     queryFn: getSources,
   });
 
-  const handleScrape = async () => {
+  const startScrapeWithProgress = async (scrapeFunction: () => Promise<unknown>, sourceName: string) => {
     setScraping(true);
-    setScrapeProgress({ status: 'running', step: 'Starting...', progress: 0, total: 100, jobs_found: 0, jobs_added: 0, current_job: '' });
+    setScrapeProgress({ status: 'running', step: `Starting ${sourceName}...`, progress: 0, total: 100, jobs_found: 0, jobs_added: 0, current_job: '' });
 
     try {
-      await triggerScrape(30);
+      await scrapeFunction();
 
       // Poll for progress
       const pollProgress = async () => {
@@ -121,6 +120,9 @@ function AppContent() {
       setScrapeProgress(null);
     }
   };
+
+  const handleScrape = () => startScrapeWithProgress(() => triggerScrape(30), 'JobSpy (LinkedIn + Indeed)');
+  const handleLeverScrape = () => startScrapeWithProgress(() => triggerLeverScrape(), 'Lever API (60+ companies)');
 
   const handleSkillClick = (skill: string) => {
     setSearchQuery(skill);
@@ -197,10 +199,30 @@ function AppContent() {
                 </Flex>
               </Button>
 
-              <Button onClick={handleScrape} disabled={scraping} style={{ cursor: 'pointer' }}>
-                <RefreshCw size={16} className={scraping ? 'animate-spin' : ''} />
-                {scraping ? 'Scraping...' : 'Scrape Jobs'}
-              </Button>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger disabled={scraping}>
+                  <Button style={{ cursor: 'pointer' }}>
+                    <RefreshCw size={16} className={scraping ? 'animate-spin' : ''} />
+                    {scraping ? 'Scraping...' : 'Scrape Jobs'}
+                    <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                  <DropdownMenu.Item onClick={handleScrape} style={{ cursor: 'pointer' }}>
+                    <Briefcase size={14} />
+                    JobSpy (LinkedIn + Indeed)
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item onClick={handleLeverScrape} style={{ cursor: 'pointer' }}>
+                    <Plus size={14} />
+                    Lever API (60+ companies)
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Item disabled style={{ cursor: 'default', opacity: 0.5 }}>
+                    <Rss size={14} />
+                    RSS Feeds (coming soon)
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             </Flex>
           </Flex>
 
