@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { Box, Flex, Heading, Text, Button, TextField, Tabs, Container, Badge, Spinner } from '@radix-ui/themes';
+import { Box, Flex, Heading, Text, Button, TextField, Tabs, Container, Badge, Spinner, Progress, Dialog } from '@radix-ui/themes';
 import {
   Search,
   RefreshCw,
@@ -16,7 +16,9 @@ import {
   getCompanies,
   getSources,
   triggerScrape,
+  getScrapeProgress,
   type Job,
+  type ScrapeProgress,
 } from './api';
 import { JobCard } from './components/JobCard';
 import { SkillHeatmap } from './components/SkillHeatmap';
@@ -40,6 +42,7 @@ function AppContent() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [, setSelectedJob] = useState<Job | null>(null);
   const [scraping, setScraping] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState<ScrapeProgress | null>(null);
 
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
@@ -80,15 +83,37 @@ function AppContent() {
 
   const handleScrape = async () => {
     setScraping(true);
+    setScrapeProgress({ status: 'running', step: 'Starting...', progress: 0, total: 100, jobs_found: 0, jobs_added: 0, current_job: '' });
+
     try {
       await triggerScrape(30);
-      setTimeout(() => {
-        queryClient.invalidateQueries();
-      }, 5000);
+
+      // Poll for progress
+      const pollProgress = async () => {
+        try {
+          const progress = await getScrapeProgress();
+          setScrapeProgress(progress);
+
+          if (progress.status === 'running') {
+            setTimeout(pollProgress, 1000);
+          } else {
+            // Scrape finished
+            setTimeout(() => {
+              queryClient.invalidateQueries();
+              setScraping(false);
+              setTimeout(() => setScrapeProgress(null), 2000);
+            }, 1000);
+          }
+        } catch (e) {
+          console.error('Error polling progress:', e);
+        }
+      };
+
+      pollProgress();
     } catch (error) {
       console.error('Scrape failed:', error);
-    } finally {
       setScraping(false);
+      setScrapeProgress(null);
     }
   };
 
@@ -280,6 +305,45 @@ function AppContent() {
         onOpenChange={setCommandOpen}
         onSelectJob={handleJobSelect}
       />
+
+      {/* Scrape Progress Dialog */}
+      <Dialog.Root open={scraping && scrapeProgress !== null}>
+        <Dialog.Content style={{ maxWidth: 450 }}>
+          <Dialog.Title>Scraping Jobs</Dialog.Title>
+          <Dialog.Description size="2" mb="4">
+            {scrapeProgress?.step || 'Starting...'}
+          </Dialog.Description>
+
+          <Progress
+            value={scrapeProgress?.progress || 0}
+            max={100}
+            size="3"
+            style={{ marginBottom: '16px' }}
+          />
+
+          <Flex justify="between" mb="3">
+            <Text size="2" color="gray">Progress: {scrapeProgress?.progress || 0}%</Text>
+            <Text size="2" color="gray">Jobs added: {scrapeProgress?.jobs_added || 0}</Text>
+          </Flex>
+
+          {scrapeProgress?.current_job && (
+            <Text size="1" color="gray" style={{ opacity: 0.7 }}>
+              {scrapeProgress.current_job}
+            </Text>
+          )}
+
+          {scrapeProgress?.status === 'completed' && (
+            <Flex align="center" gap="2" mt="3">
+              <Badge color="green" size="2">Done!</Badge>
+              <Text size="2">Added {scrapeProgress.jobs_added} new jobs</Text>
+            </Flex>
+          )}
+
+          {scrapeProgress?.status === 'failed' && (
+            <Badge color="red" size="2">Failed</Badge>
+          )}
+        </Dialog.Content>
+      </Dialog.Root>
     </Box>
   );
 }

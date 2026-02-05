@@ -24,7 +24,7 @@ except:
 from skill_extractor import skill_extractor, section_parser
 
 
-def run_jobspy_scrape(location: str = "San Francisco Bay Area", days: int = 30) -> Dict:
+def run_jobspy_scrape(location: str = "San Francisco Bay Area", days: int = 30, progress_callback=None) -> Dict:
     """Run a scrape using jobspy library."""
 
     db = SessionLocal()
@@ -37,8 +37,13 @@ def run_jobspy_scrape(location: str = "San Francisco Bay Area", days: int = 30) 
         "sources": {}
     }
 
+    def update_progress(step, progress, total, current_job=""):
+        if progress_callback:
+            progress_callback(step, progress, total, current_job, results["jobs_added"])
+
     try:
         logger.info(f"Starting jobspy scrape for '{location}'...")
+        update_progress("Fetching jobs from LinkedIn & Indeed...", 0, 100)
 
         # Scrape from multiple sources
         jobs_df = scrape_jobs(
@@ -52,15 +57,18 @@ def run_jobspy_scrape(location: str = "San Francisco Bay Area", days: int = 30) 
 
         results["jobs_found"] = len(jobs_df)
         logger.info(f"Found {len(jobs_df)} total jobs")
+        update_progress(f"Found {len(jobs_df)} jobs, filtering FDE roles...", 20, 100)
 
         # Filter for FDE roles only
         fde_keywords = ['forward deploy', 'fde', 'forward-deploy']
         fde_jobs = jobs_df[jobs_df['title'].str.lower().str.contains('|'.join(fde_keywords), na=False)]
 
         logger.info(f"Filtered to {len(fde_jobs)} FDE jobs")
+        total_fde = len(fde_jobs)
+        update_progress(f"Processing {total_fde} FDE jobs...", 30, 100)
 
         # Process each job
-        for _, row in fde_jobs.iterrows():
+        for idx, (_, row) in enumerate(fde_jobs.iterrows()):
             try:
                 job_url = str(row.get('job_url', ''))
                 if not job_url or job_url == 'nan':
@@ -143,6 +151,15 @@ def run_jobspy_scrape(location: str = "San Francisco Bay Area", days: int = 30) 
                 results["sources"][source] += 1
 
                 logger.info(f"Added: {title[:40]} @ {company}")
+
+                # Update progress
+                progress_pct = 30 + int((idx + 1) / total_fde * 60)
+                update_progress(
+                    f"Processing jobs ({idx + 1}/{total_fde})...",
+                    progress_pct,
+                    100,
+                    f"{title[:30]} @ {company}"
+                )
 
             except Exception as e:
                 logger.error(f"Error processing job: {e}")

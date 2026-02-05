@@ -300,27 +300,97 @@ async def get_sources(db: Session = Depends(get_db)):
     return [{"source": s[0], "count": s[1]} for s in sources]
 
 
+# Scrape progress tracking
+scrape_progress = {
+    "status": "idle",
+    "step": "",
+    "progress": 0,
+    "total": 0,
+    "jobs_found": 0,
+    "jobs_added": 0,
+    "current_job": "",
+}
+
+@app.get("/api/scrape/progress")
+async def get_scrape_progress():
+    """Get current scrape progress."""
+    return scrape_progress
+
 @app.post("/api/scrape", response_model=ScrapeResponse)
 async def trigger_scrape(
+    background_tasks: BackgroundTasks,
     days: int = Query(30, description="Scrape jobs from last N days"),
     location: str = Query("San Francisco Bay Area", description="Location to search"),
 ):
     """Trigger a scrape job using jobspy (Indeed + LinkedIn)."""
+    global scrape_progress
+
+    if scrape_progress["status"] == "running":
+        return ScrapeResponse(
+            status="running",
+            message="Scrape already in progress",
+            results=scrape_progress,
+        )
+
+    # Reset progress
+    scrape_progress = {
+        "status": "running",
+        "step": "Starting scrape...",
+        "progress": 0,
+        "total": 0,
+        "jobs_found": 0,
+        "jobs_added": 0,
+        "current_job": "",
+    }
+
+    # Run scrape in background
+    background_tasks.add_task(run_scrape_with_progress, location, days)
+
+    return ScrapeResponse(
+        status="started",
+        message="Scrape started in background. Poll /api/scrape/progress for updates.",
+        results=scrape_progress,
+    )
+
+def run_scrape_with_progress(location: str, days: int):
+    """Run scrape with progress updates."""
+    global scrape_progress
     try:
         logger.info(f"Starting scrape for {location}, last {days} days...")
-        results = run_jobspy_scrape(location=location, days=days)
+        scrape_progress["step"] = "Fetching jobs from LinkedIn & Indeed..."
 
-        return ScrapeResponse(
-            status=results["status"],
-            message=f"Found {results['jobs_found']} jobs, added {results['jobs_added']} new, skipped {results['jobs_skipped']} duplicates",
-            results=results,
-        )
+        results = run_jobspy_scrape(location=location, days=days, progress_callback=update_progress)
+
+        scrape_progress = {
+            "status": "completed",
+            "step": "Done!",
+            "progress": 100,
+            "total": 100,
+            "jobs_found": results.get("jobs_found", 0),
+            "jobs_added": results.get("jobs_added", 0),
+            "current_job": "",
+        }
+        logger.info(f"Scrape completed: {results}")
     except Exception as e:
         logger.error(f"Scrape failed: {e}")
-        return ScrapeResponse(
-            status="failed",
-            message=f"Scrape failed: {str(e)}",
-        )
+        scrape_progress = {
+            "status": "failed",
+            "step": f"Error: {str(e)}",
+            "progress": 0,
+            "total": 0,
+            "jobs_found": 0,
+            "jobs_added": 0,
+            "current_job": "",
+        }
+
+def update_progress(step: str, progress: int, total: int, current_job: str = "", jobs_added: int = 0):
+    """Callback to update scrape progress."""
+    global scrape_progress
+    scrape_progress["step"] = step
+    scrape_progress["progress"] = progress
+    scrape_progress["total"] = total
+    scrape_progress["current_job"] = current_job
+    scrape_progress["jobs_added"] = jobs_added
 
 
 @app.get("/api/scrape/status")

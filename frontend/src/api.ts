@@ -121,3 +121,18 @@ export async function getScrapeStatus(): Promise<any[]> {
   const { data } = await api.get('/scrape/status');
   return data;
 }
+
+export interface ScrapeProgress {
+  status: 'idle' | 'running' | 'completed' | 'failed';
+  step: string;
+  progress: number;
+  total: number;
+  jobs_found: number;
+  jobs_added: number;
+  current_job: string;
+}
+
+export async function getScrapeProgress(): Promise<ScrapeProgress> {
+  const { data } = await api.get('/scrape/progress');
+  return data;
+}
