@@ -122,21 +122,13 @@ class BaseScraper(ABC):
         return None
 
     def _is_fde_role(self, title: str) -> bool:
-        """Check if job title matches FDE-related roles."""
+        """Check if job title matches FDE-related roles (strict: only Forward Deployed Engineer)."""
         title_lower = title.lower()
+        # Strict filter: Only Forward Deployed Engineer roles
         fde_keywords = [
             "forward deploy",
             "forward-deploy",
             "fde",
-            "field engineer",
-            "solutions engineer",
-            "solutions architect",
-            "implementation engineer",
-            "customer engineer",
-            "technical account manager",
-            "deployment engineer",
-            "integration engineer",
-            "professional services",
         ]
         return any(kw in title_lower for kw in fde_keywords)
 
