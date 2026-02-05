@@ -38,7 +38,7 @@ type Tab = 'jobs' | 'heatmap' | 'summary';
 function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('jobs');
   const [commandOpen, setCommandOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [, setSelectedJob] = useState<Job | null>(null);
   const [scraping, setScraping] = useState(false);
 
   const [selectedSource, setSelectedSource] = useState<string | null>(null);

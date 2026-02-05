@@ -4,7 +4,6 @@ import { Card, Flex, Box, Text, Heading, Badge, Button, Separator, Grid } from '
 import {
   ExternalLink,
   MapPin,
-  Calendar,
   ChevronDown,
   ChevronUp,
   Building2,
