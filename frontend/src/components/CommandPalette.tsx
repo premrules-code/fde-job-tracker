@@ -161,6 +161,8 @@ export const CommandPalette = ({
                   key={job.id}
                   value={`${job.title}-${job.company}-${job.id}`}
                   onSelect={() => {
+                    // Open job URL in new tab
+                    window.open(job.apply_url || job.job_url, '_blank');
                     onSelectJob(job);
                     onOpenChange(false);
                     setQuery('');
