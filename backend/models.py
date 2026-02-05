@@ -76,7 +76,9 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is required")
+    # Fallback for Railway deployment - env vars should be set in Railway dashboard
+    DATABASE_URL = "postgresql://neondb_owner:npg_vuT0y2YEzVBN@ep-dark-thunder-aiwjryj1-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    print("WARNING: Using fallback DATABASE_URL. Set DATABASE_URL env var in production.")
 
 engine = create_engine(
     DATABASE_URL,
