@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* Base styles */
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Command palette styles */
+[cmdk-item][data-selected="true"] {
+  background: var(--accent-a4);
+}
+
+[cmdk-item]:hover {
+  background: var(--gray-a3);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-a3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-a8);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-9);
+}
+
+/* Spin animation for refresh button */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Utility classes for responsive hiding */
+@media (max-width: 640px) {
+  .hidden.sm\:inline,
+  .hidden.sm\:flex {
+    display: none !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .sm\:inline {
+    display: inline !important;
+  }
+  .sm\:flex {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hidden.lg\:block {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:block {
+    display: block !important;
+  }
+}
