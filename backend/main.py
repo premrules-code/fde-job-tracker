@@ -114,6 +114,9 @@ async def startup_event():
 
 @app.get("/")
 async def root():
+    """Serve frontend or API info."""
+    if STATIC_DIR.exists() and (STATIC_DIR / "index.html").exists():
+        return FileResponse(STATIC_DIR / "index.html")
     return {"message": "FDE Job Tracker API", "version": "1.0.0"}
 
 
