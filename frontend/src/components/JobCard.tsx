@@ -10,6 +10,8 @@ import {
   Code,
   Brain,
   Cloud,
+  Monitor,
+  Server,
 } from 'lucide-react';
 import type { Job } from '../api';
 
@@ -18,12 +20,27 @@ interface JobCardProps {
   onSelect?: (job: Job) => void;
 }
 
-const sourceColors: Record<string, 'blue' | 'purple' | 'green' | 'orange' | 'pink'> = {
+const sourceColors: Record<string, 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'cyan' | 'red' | 'yellow'> = {
   linkedin: 'blue',
   indeed: 'purple',
   greenhouse: 'green',
   lever: 'orange',
   wellfound: 'pink',
+  google_jobs: 'cyan',
+  ycombinator: 'red',
+  rapidapi_linkedin: 'blue',
+};
+
+const sourceLabels: Record<string, string> = {
+  linkedin: 'LinkedIn',
+  indeed: 'Indeed',
+  greenhouse: 'Greenhouse',
+  lever: 'Lever',
+  wellfound: 'Wellfound',
+  google_jobs: 'Google Jobs',
+  ycombinator: 'Y Combinator',
+  rapidapi_linkedin: 'LinkedIn',
+  indeed_rss: 'Indeed RSS',
 };
 
 export const JobCard = ({ job, onSelect }: JobCardProps) => {
@@ -39,8 +56,11 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
   };
 
   const hasAiMlSkills = job.ai_ml_keywords && job.ai_ml_keywords.length > 0;
-  const hasRequiredSkills = job.required_skills && job.required_skills.length > 0;
+  const hasBackendSkills = job.backend_skills && job.backend_skills.length > 0;
+  const hasFrontendSkills = job.frontend_skills && job.frontend_skills.length > 0;
   const hasTechSkills = job.technologies && job.technologies.length > 0;
+  // Fallback to required_skills for legacy data
+  const hasRequiredSkills = !hasBackendSkills && !hasFrontendSkills && job.required_skills && job.required_skills.length > 0;
 
   return (
     <Card size="3" style={{ cursor: 'pointer' }} onClick={() => onSelect?.(job)}>
@@ -50,7 +70,7 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
           <Flex gap="2" align="center" mb="2">
             {job.source && (
               <Badge size="1" color={sourceColors[job.source] || 'gray'}>
-                {job.source}
+                {sourceLabels[job.source] || job.source}
               </Badge>
             )}
             <Badge size="1" variant="outline" color="gray">
@@ -88,7 +108,7 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
 
       {/* Skills Section - More Prominent */}
       <Box mb="4" p="3" style={{ background: 'var(--gray-a2)', borderRadius: 'var(--radius-3)' }}>
-        <Grid columns={{ initial: '1', sm: '3' }} gap="3">
+        <Grid columns={{ initial: '1', sm: '2', md: '4' }} gap="3">
           {/* AI/ML Skills */}
           {hasAiMlSkills && (
             <Box>
@@ -106,7 +126,41 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
             </Box>
           )}
 
-          {/* Programming Skills */}
+          {/* Backend Skills */}
+          {hasBackendSkills && (
+            <Box>
+              <Flex gap="1" align="center" mb="2">
+                <Server size={14} style={{ color: 'var(--blue-11)' }} />
+                <Text size="1" weight="bold" color="blue">Backend</Text>
+              </Flex>
+              <Flex gap="1" wrap="wrap">
+                {job.backend_skills?.map((skill) => (
+                  <Badge key={skill} size="1" variant="soft" color="blue" radius="full">
+                    {skill}
+                  </Badge>
+                ))}
+              </Flex>
+            </Box>
+          )}
+
+          {/* Frontend Skills */}
+          {hasFrontendSkills && (
+            <Box>
+              <Flex gap="1" align="center" mb="2">
+                <Monitor size={14} style={{ color: 'var(--cyan-11)' }} />
+                <Text size="1" weight="bold" color="cyan">Frontend</Text>
+              </Flex>
+              <Flex gap="1" wrap="wrap">
+                {job.frontend_skills?.map((skill) => (
+                  <Badge key={skill} size="1" variant="soft" color="cyan" radius="full">
+                    {skill}
+                  </Badge>
+                ))}
+              </Flex>
+            </Box>
+          )}
+
+          {/* Legacy Programming Skills (for old data) */}
           {hasRequiredSkills && (
             <Box>
               <Flex gap="1" align="center" mb="2">

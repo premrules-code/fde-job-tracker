@@ -36,27 +36,50 @@ AI_ML_KEYWORDS = {
     "statistical analysis", "a/b testing", "experimentation",
 }
 
-PROGRAMMING_SKILLS = {
-    # Languages
-    "python", "javascript", "typescript", "java", "go", "golang", "rust", "c++", "c#",
-    "scala", "kotlin", "ruby", "php", "swift", "r", "sql",
+BACKEND_SKILLS = {
+    # Backend Languages
+    "python", "java", "go", "golang", "rust", "c++", "c#",
+    "scala", "kotlin", "ruby", "php", "r",
 
-    # Web Frameworks
-    "react", "vue", "angular", "next.js", "nextjs", "node.js", "nodejs", "express",
-    "fastapi", "flask", "django", "spring", "rails", "svelte",
+    # Backend Frameworks
+    "fastapi", "flask", "django", "spring", "spring boot", "rails", "express",
+    "node.js", "nodejs", "nest.js", "nestjs", "gin", "fiber", "actix",
 
     # APIs & Integration
     "rest", "restful", "graphql", "grpc", "websockets", "api design", "api development",
     "openapi", "swagger", "api integration", "sdk", "webhooks",
 
-    # Data Structures
-    "data structures", "algorithms", "system design", "software architecture",
-    "microservices", "distributed systems", "event-driven",
+    # Architecture
+    "microservices", "distributed systems", "event-driven", "message queue",
+    "system design", "software architecture", "backend", "server-side",
 
-    # Development Practices
-    "full-stack", "full stack", "backend", "frontend", "production code",
+    # Development
+    "data structures", "algorithms", "production code",
     "code review", "testing", "unit testing", "integration testing",
-    "git", "version control", "agile development",
+}
+
+FRONTEND_SKILLS = {
+    # Frontend Languages
+    "javascript", "typescript", "html", "css", "sass", "scss", "less",
+
+    # Frontend Frameworks
+    "react", "vue", "vue.js", "angular", "next.js", "nextjs", "nuxt", "nuxt.js",
+    "svelte", "solid", "solidjs", "remix", "gatsby", "astro",
+
+    # UI Libraries
+    "tailwind", "tailwindcss", "bootstrap", "material ui", "mui", "chakra ui",
+    "radix", "shadcn", "ant design", "styled components", "emotion",
+
+    # State Management
+    "redux", "zustand", "recoil", "mobx", "jotai", "tanstack query", "react query",
+
+    # Build Tools
+    "webpack", "vite", "parcel", "esbuild", "rollup", "babel",
+
+    # Frontend Concepts
+    "responsive design", "accessibility", "a11y", "seo", "web performance",
+    "pwa", "progressive web app", "spa", "single page application",
+    "frontend", "front-end", "client-side", "ui/ux", "user interface",
 }
 
 CLOUD_DEVOPS = {
@@ -153,8 +176,9 @@ DATA_PIPELINES = {
 
 ALL_SKILLS = {
     "ai_ml": AI_ML_KEYWORDS,
-    "programming": PROGRAMMING_SKILLS,
-    "cloud_devops": CLOUD_DEVOPS,
+    "backend": BACKEND_SKILLS,
+    "frontend": FRONTEND_SKILLS,
+    "cloud": CLOUD_DEVOPS,
     "soft_skills": SOFT_SKILLS,
     "fde_specific": FDE_SPECIFIC,
     "data_pipelines": DATA_PIPELINES,

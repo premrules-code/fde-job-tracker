@@ -31,10 +31,12 @@ class Job(Base):
     about_company = Column(Text)
 
     # Extracted skills/keywords
-    required_skills = Column(JSON)  # List of required skills
+    required_skills = Column(JSON)  # List of required skills (legacy - combined backend+frontend)
     bonus_skills = Column(JSON)  # List of nice-to-have skills
-    technologies = Column(JSON)  # Specific tech stack mentioned
+    technologies = Column(JSON)  # Cloud/DevOps tech stack
     ai_ml_keywords = Column(JSON)  # AI/ML specific terms
+    backend_skills = Column(JSON)  # Backend languages/frameworks
+    frontend_skills = Column(JSON)  # Frontend languages/frameworks
 
     # Metadata
     salary_range = Column(String(255))

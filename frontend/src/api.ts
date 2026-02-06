@@ -27,6 +27,8 @@ export interface Job {
   bonus_skills: string[] | null;
   technologies: string[] | null;
   ai_ml_keywords: string[] | null;
+  backend_skills: string[] | null;
+  frontend_skills: string[] | null;
   salary_range: string | null;
   employment_type: string | null;
   remote_status: string | null;
