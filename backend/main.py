@@ -1086,10 +1086,12 @@ def run_ycombinator_scrape(max_results: int):
 @app.get("/api/llm/status")
 async def get_llm_status():
     """Check LLM skill extraction status and stats."""
+    stats = llm_skill_extractor.get_stats()
+    model_name = "Gemini Flash" if stats.get("active_model") == "gemini" else "Claude Haiku"
     return {
         "available": llm_skill_extractor.is_available(),
-        "stats": llm_skill_extractor.get_stats(),
-        "message": "LLM extraction enabled (Claude Haiku)" if llm_skill_extractor.is_available() else "Set ANTHROPIC_API_KEY to enable LLM extraction",
+        "stats": stats,
+        "message": f"LLM extraction enabled ({model_name})" if llm_skill_extractor.is_available() else "Set GOOGLE_API_KEY or ANTHROPIC_API_KEY to enable",
     }
 
 
