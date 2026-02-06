@@ -13,6 +13,7 @@ python-jobspy==1.1.75
 
 # LLM skill extraction
 anthropic==0.42.0
+google-generativeai==0.8.0
 
 # Data processing
 pandas==2.2.0

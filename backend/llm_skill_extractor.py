@@ -5,7 +5,6 @@ import hashlib
 from typing import Dict, List, Optional
 from pathlib import Path
 from dotenv import load_dotenv
-from anthropic import Anthropic
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +12,36 @@ logger = logging.getLogger(__name__)
 env_path = Path(__file__).parent / ".env"
 load_dotenv(env_path)
 
-# Get API key from environment
+# Get API keys from environment
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # Simple in-memory cache for skill extraction results
 _skill_cache: Dict[str, Dict[str, List[str]]] = {}
 MAX_CACHE_SIZE = 500
+
+# Initialize clients
+gemini_client = None
+anthropic_client = None
+
+# Try to initialize Gemini (primary - cheaper)
+if GOOGLE_API_KEY:
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=GOOGLE_API_KEY)
+        gemini_client = genai.GenerativeModel("gemini-2.0-flash")
+        logger.info("Gemini Flash initialized (primary LLM)")
+    except Exception as e:
+        logger.warning(f"Failed to initialize Gemini: {e}")
+
+# Try to initialize Anthropic (fallback)
+if ANTHROPIC_API_KEY:
+    try:
+        from anthropic import Anthropic
+        anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
+        logger.info("Claude Haiku initialized (fallback LLM)")
+    except Exception as e:
+        logger.warning(f"Failed to initialize Anthropic: {e}")
 
 SKILL_CATEGORIES = {
     "ai_ml": "AI & Machine Learning: LLMs (Claude, GPT, ChatGPT, Gemini), AI agents, agentic systems, RAG, prompt engineering, fine-tuning, embeddings, vector databases (Pinecone, Weaviate, Chroma), LangChain, LlamaIndex, AI safety, ML frameworks (PyTorch, TensorFlow, scikit-learn), deep learning, neural networks, NLP, computer vision, MLOps, transformers, hugging face",
@@ -58,14 +81,21 @@ Job Description:
 
 class LLMSkillExtractor:
     def __init__(self, use_cache: bool = True):
-        self.client = None
         self.use_cache = use_cache
         self.extraction_count = 0
-        if ANTHROPIC_API_KEY:
-            self.client = Anthropic(api_key=ANTHROPIC_API_KEY)
-            logger.info("LLM Skill Extractor initialized with Anthropic API")
+        self.gemini_count = 0
+        self.claude_count = 0
+        self.active_model = None
+
+        # Determine which model to use (Gemini preferred for cost)
+        if gemini_client:
+            self.active_model = "gemini"
+            logger.info("LLM Skill Extractor using Gemini Flash (primary)")
+        elif anthropic_client:
+            self.active_model = "claude"
+            logger.info("LLM Skill Extractor using Claude Haiku (fallback)")
         else:
-            logger.warning("ANTHROPIC_API_KEY not set - LLM extraction disabled")
+            logger.warning("No LLM API keys set - extraction disabled")
 
     def _get_cache_key(self, text: str) -> str:
         """Generate a cache key from text."""
@@ -91,14 +121,35 @@ class LLMSkillExtractor:
         key = self._get_cache_key(text)
         _skill_cache[key] = skills
 
-    def extract_skills(self, text: str, use_haiku: bool = True) -> Dict[str, List[str]]:
-        """Extract skills from text using Claude.
+    def _extract_with_gemini(self, text: str) -> str:
+        """Extract skills using Gemini Flash."""
+        response = gemini_client.generate_content(
+            EXTRACTION_PROMPT + text,
+            generation_config={
+                "temperature": 0.1,
+                "max_output_tokens": 512,
+            }
+        )
+        self.gemini_count += 1
+        return response.text
+
+    def _extract_with_claude(self, text: str) -> str:
+        """Extract skills using Claude Haiku."""
+        response = anthropic_client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=512,
+            messages=[{"role": "user", "content": EXTRACTION_PROMPT + text}]
+        )
+        self.claude_count += 1
+        return response.content[0].text
+
+    def extract_skills(self, text: str) -> Dict[str, List[str]]:
+        """Extract skills from text using Gemini Flash (primary) or Claude Haiku (fallback).
 
         Args:
             text: Job description text
-            use_haiku: Use Claude Haiku for cost efficiency (default True)
         """
-        if not self.client or not text:
+        if not self.active_model or not text:
             return {cat: [] for cat in SKILL_CATEGORIES.keys()}
 
         # Check cache first
@@ -111,24 +162,28 @@ class LLMSkillExtractor:
             # Truncate very long descriptions
             text = text[:6000] if len(text) > 6000 else text
 
-            # Use Haiku for cost efficiency (~$0.25/1M input tokens vs $3/1M for Sonnet)
-            model = "claude-3-5-haiku-20241022" if use_haiku else "claude-sonnet-4-20250514"
+            # Try Gemini first, fall back to Claude
+            content = None
+            try:
+                if self.active_model == "gemini" and gemini_client:
+                    content = self._extract_with_gemini(text)
+                elif anthropic_client:
+                    content = self._extract_with_claude(text)
+            except Exception as e:
+                logger.warning(f"Primary model failed: {e}, trying fallback...")
+                # Try fallback
+                if self.active_model == "gemini" and anthropic_client:
+                    content = self._extract_with_claude(text)
+                elif self.active_model == "claude" and gemini_client:
+                    content = self._extract_with_gemini(text)
 
-            response = self.client.messages.create(
-                model=model,
-                max_tokens=512,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": EXTRACTION_PROMPT + text
-                    }
-                ]
-            )
+            if not content:
+                return {cat: [] for cat in SKILL_CATEGORIES.keys()}
 
             self.extraction_count += 1
 
             # Parse JSON response
-            content = response.content[0].text.strip()
+            content = content.strip()
 
             # Handle potential markdown code blocks
             if content.startswith("```"):
@@ -177,14 +232,19 @@ class LLMSkillExtractor:
 
     def is_available(self) -> bool:
         """Check if LLM extraction is available."""
-        return self.client is not None
+        return self.active_model is not None
 
     def get_stats(self) -> Dict:
         """Get extraction statistics."""
         return {
             "available": self.is_available(),
+            "active_model": self.active_model or "none",
+            "gemini_available": gemini_client is not None,
+            "claude_available": anthropic_client is not None,
             "cache_size": len(_skill_cache),
             "extractions_performed": self.extraction_count,
+            "gemini_extractions": self.gemini_count,
+            "claude_extractions": self.claude_count,
         }
 
 
@@ -235,16 +295,20 @@ if __name__ == "__main__":
     """
 
     print("Testing LLM Skill Extractor...")
-    print(f"API Available: {llm_skill_extractor.is_available()}")
+    stats = llm_skill_extractor.get_stats()
+    print(f"Available: {stats['available']}")
+    print(f"Active Model: {stats['active_model']}")
+    print(f"Gemini Available: {stats['gemini_available']}")
+    print(f"Claude Available: {stats['claude_available']}")
 
     if llm_skill_extractor.is_available():
-        print("\nExtracting skills with LLM (Haiku)...")
+        print(f"\nExtracting skills with {stats['active_model'].upper()}...")
         skills = llm_skill_extractor.extract_skills(sample)
         print("\nExtracted Skills:")
         for category, skill_list in skills.items():
             if skill_list:
                 print(f"  {category}: {', '.join(skill_list)}")
 
-        print(f"\nStats: {llm_skill_extractor.get_stats()}")
+        print(f"\nUpdated Stats: {llm_skill_extractor.get_stats()}")
     else:
-        print("Set ANTHROPIC_API_KEY to test LLM extraction")
+        print("\nSet GOOGLE_API_KEY (preferred) or ANTHROPIC_API_KEY to enable LLM extraction")
