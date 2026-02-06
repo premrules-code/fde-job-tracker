@@ -6,6 +6,8 @@ from .lever_scraper import LeverScraper
 from .wellfound_scraper import WellfoundScraper
 from .rss_scraper import RSSFeedScraper, rss_scraper
 from .rapidapi_linkedin_scraper import RapidAPILinkedInScraper, rapidapi_linkedin_scraper
+from .ycombinator_scraper import YCombinatorScraper, ycombinator_scraper
+from .serpapi_scraper import SerpAPIScraper, serpapi_scraper
 
 __all__ = [
     "BaseScraper",
@@ -19,4 +21,8 @@ __all__ = [
     "rss_scraper",
     "RapidAPILinkedInScraper",
     "rapidapi_linkedin_scraper",
+    "YCombinatorScraper",
+    "ycombinator_scraper",
+    "SerpAPIScraper",
+    "serpapi_scraper",
 ]

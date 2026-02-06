@@ -34,13 +34,9 @@ class WellfoundScraper(BaseScraper):
         """Search Wellfound for FDE jobs."""
         jobs = []
 
-        # Build search URL for engineering roles
-        # Wellfound uses different URL structure
+        # Build search URL - strict FDE roles only
         search_queries = [
             "forward-deployed-engineer",
-            "solutions-engineer",
-            "field-engineer",
-            "implementation-engineer",
         ]
 
         for search_term in search_queries:

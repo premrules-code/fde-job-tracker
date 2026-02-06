@@ -13,7 +13,14 @@ import logging
 from models import Job, SkillFrequency, ScraperLog, get_db, init_db, SessionLocal
 from job_scraper import job_scraper
 from jobspy_scraper import run_jobspy_scrape
-from scrapers import rss_scraper, LeverScraper, rapidapi_linkedin_scraper
+from scrapers import (
+    rss_scraper,
+    LeverScraper,
+    rapidapi_linkedin_scraper,
+    WellfoundScraper,
+    ycombinator_scraper,
+    serpapi_scraper,
+)
 from skill_extractor import skill_extractor
 
 logging.basicConfig(level=logging.INFO)
@@ -904,6 +911,247 @@ def run_rapidapi_scrape_with_progress(days: int, max_results: int):
             "jobs_added": 0,
             "current_job": "",
         }
+    finally:
+        db.close()
+
+
+# Wellfound (AngelList) Scraping Endpoint
+
+wellfound_scraper = WellfoundScraper()
+
+@app.post("/api/wellfound/scrape")
+async def trigger_wellfound_scrape(
+    background_tasks: BackgroundTasks,
+    max_results: int = Query(50, description="Maximum results to fetch"),
+):
+    """Trigger a scrape from Wellfound (AngelList) - startup job board."""
+    global scrape_progress
+
+    if scrape_progress["status"] == "running":
+        return ScrapeResponse(status="running", message="Scrape already in progress", results=scrape_progress)
+
+    scrape_progress = {
+        "status": "running", "step": "Starting Wellfound scrape...",
+        "progress": 0, "total": 100, "jobs_found": 0, "jobs_added": 0, "current_job": "",
+    }
+
+    background_tasks.add_task(run_wellfound_scrape, max_results)
+    return ScrapeResponse(status="started", message="Wellfound scrape started.", results=scrape_progress)
+
+
+def run_wellfound_scrape(max_results: int):
+    global scrape_progress
+    db = SessionLocal()
+    try:
+        scrape_progress["step"] = "Fetching jobs from Wellfound..."
+        jobs = wellfound_scraper.search_jobs(max_results=max_results)
+        scrape_progress["jobs_found"] = len(jobs)
+        scrape_progress["progress"] = 30
+
+        jobs_added = 0
+        for idx, job_listing in enumerate(jobs):
+            try:
+                existing = db.query(Job).filter(Job.job_url == job_listing.job_url).first()
+                if existing:
+                    continue
+
+                details = wellfound_scraper.get_job_details(job_listing.job_url)
+                raw_desc = details.get("raw_description", "") if details else ""
+                skills = skill_extractor.extract_skills(raw_desc) if raw_desc else {}
+
+                job = Job(
+                    title=job_listing.title, company=job_listing.company, location=job_listing.location,
+                    job_url=job_listing.job_url, apply_url=job_listing.apply_url, source="wellfound",
+                    date_posted=job_listing.date_posted, date_scraped=datetime.utcnow(),
+                    raw_description=raw_desc,
+                    required_skills=skills.get("backend", []) + skills.get("frontend", []),
+                    technologies=skills.get("cloud", []),
+                    ai_ml_keywords=skills.get("ai", []) + skills.get("ml", []),
+                    salary_range=job_listing.salary_range,
+                    relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
+                    is_active=True,
+                )
+                db.add(job)
+                jobs_added += 1
+                scrape_progress.update({
+                    "step": f"Processing Wellfound jobs ({idx + 1}/{len(jobs)})...",
+                    "progress": 30 + int((idx + 1) / len(jobs) * 60) if jobs else 90,
+                    "current_job": f"{job_listing.title[:30]} @ {job_listing.company}",
+                    "jobs_added": jobs_added,
+                })
+            except Exception as e:
+                logger.error(f"Error processing Wellfound job: {e}")
+
+        db.commit()
+        scrape_progress = {"status": "completed", "step": "Done!", "progress": 100, "total": 100,
+                          "jobs_found": len(jobs), "jobs_added": jobs_added, "current_job": ""}
+    except Exception as e:
+        logger.error(f"Wellfound scrape failed: {e}")
+        scrape_progress = {"status": "failed", "step": f"Error: {str(e)}", "progress": 0,
+                          "total": 0, "jobs_found": 0, "jobs_added": 0, "current_job": ""}
+    finally:
+        db.close()
+
+
+# Y Combinator Jobs Scraping Endpoint
+
+@app.post("/api/ycombinator/scrape")
+async def trigger_ycombinator_scrape(
+    background_tasks: BackgroundTasks,
+    max_results: int = Query(50, description="Maximum results to fetch"),
+):
+    """Trigger a scrape from Y Combinator Jobs - YC startup jobs."""
+    global scrape_progress
+
+    if scrape_progress["status"] == "running":
+        return ScrapeResponse(status="running", message="Scrape already in progress", results=scrape_progress)
+
+    scrape_progress = {
+        "status": "running", "step": "Starting Y Combinator scrape...",
+        "progress": 0, "total": 100, "jobs_found": 0, "jobs_added": 0, "current_job": "",
+    }
+
+    background_tasks.add_task(run_ycombinator_scrape, max_results)
+    return ScrapeResponse(status="started", message="Y Combinator scrape started.", results=scrape_progress)
+
+
+def run_ycombinator_scrape(max_results: int):
+    global scrape_progress
+    db = SessionLocal()
+    try:
+        scrape_progress["step"] = "Fetching jobs from Y Combinator..."
+        jobs = ycombinator_scraper.search_jobs(max_results=max_results)
+        scrape_progress["jobs_found"] = len(jobs)
+        scrape_progress["progress"] = 30
+
+        jobs_added = 0
+        for idx, job_listing in enumerate(jobs):
+            try:
+                existing = db.query(Job).filter(Job.job_url == job_listing.job_url).first()
+                if existing:
+                    continue
+
+                details = ycombinator_scraper.get_job_details(job_listing.job_url)
+                raw_desc = details.get("raw_description", "") if details else ""
+                skills = skill_extractor.extract_skills(raw_desc) if raw_desc else {}
+
+                job = Job(
+                    title=job_listing.title, company=job_listing.company, location=job_listing.location,
+                    job_url=job_listing.job_url, apply_url=job_listing.apply_url, source="ycombinator",
+                    date_posted=job_listing.date_posted, date_scraped=datetime.utcnow(),
+                    raw_description=raw_desc,
+                    required_skills=skills.get("backend", []) + skills.get("frontend", []),
+                    technologies=skills.get("cloud", []),
+                    ai_ml_keywords=skills.get("ai", []) + skills.get("ml", []),
+                    relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
+                    is_active=True,
+                )
+                db.add(job)
+                jobs_added += 1
+                scrape_progress.update({
+                    "step": f"Processing YC jobs ({idx + 1}/{len(jobs)})...",
+                    "progress": 30 + int((idx + 1) / len(jobs) * 60) if jobs else 90,
+                    "current_job": f"{job_listing.title[:30]} @ {job_listing.company}",
+                    "jobs_added": jobs_added,
+                })
+            except Exception as e:
+                logger.error(f"Error processing YC job: {e}")
+
+        db.commit()
+        scrape_progress = {"status": "completed", "step": "Done!", "progress": 100, "total": 100,
+                          "jobs_found": len(jobs), "jobs_added": jobs_added, "current_job": ""}
+    except Exception as e:
+        logger.error(f"Y Combinator scrape failed: {e}")
+        scrape_progress = {"status": "failed", "step": f"Error: {str(e)}", "progress": 0,
+                          "total": 0, "jobs_found": 0, "jobs_added": 0, "current_job": ""}
+    finally:
+        db.close()
+
+
+# SerpAPI Google Jobs Scraping Endpoint
+
+@app.get("/api/serpapi/status")
+async def get_serpapi_status():
+    """Check if SerpAPI is configured."""
+    return {
+        "available": serpapi_scraper.is_available(),
+        "message": "Set SERPAPI_KEY environment variable to enable" if not serpapi_scraper.is_available() else "SerpAPI is configured",
+    }
+
+
+@app.post("/api/serpapi/scrape")
+async def trigger_serpapi_scrape(
+    background_tasks: BackgroundTasks,
+    days: int = Query(30, description="Jobs posted in last N days"),
+    max_results: int = Query(50, description="Maximum results to fetch"),
+):
+    """Trigger a scrape from Google Jobs via SerpAPI."""
+    global scrape_progress
+
+    if not serpapi_scraper.is_available():
+        raise HTTPException(status_code=400, detail="SerpAPI key not configured. Set SERPAPI_KEY env var.")
+
+    if scrape_progress["status"] == "running":
+        return ScrapeResponse(status="running", message="Scrape already in progress", results=scrape_progress)
+
+    scrape_progress = {
+        "status": "running", "step": "Starting Google Jobs scrape via SerpAPI...",
+        "progress": 0, "total": 100, "jobs_found": 0, "jobs_added": 0, "current_job": "",
+    }
+
+    background_tasks.add_task(run_serpapi_scrape, days, max_results)
+    return ScrapeResponse(status="started", message="SerpAPI Google Jobs scrape started.", results=scrape_progress)
+
+
+def run_serpapi_scrape(days: int, max_results: int):
+    global scrape_progress
+    db = SessionLocal()
+    try:
+        scrape_progress["step"] = "Fetching jobs from Google Jobs..."
+        jobs = serpapi_scraper.search_jobs(days_ago=days, max_results=max_results)
+        scrape_progress["jobs_found"] = len(jobs)
+        scrape_progress["progress"] = 30
+
+        jobs_added = 0
+        for idx, job_listing in enumerate(jobs):
+            try:
+                existing = db.query(Job).filter(Job.job_url == job_listing.job_url).first()
+                if existing:
+                    continue
+
+                skills = skill_extractor.extract_skills(job_listing.raw_description) if job_listing.raw_description else {}
+
+                job = Job(
+                    title=job_listing.title, company=job_listing.company, location=job_listing.location,
+                    job_url=job_listing.job_url, apply_url=job_listing.apply_url, source="google_jobs",
+                    date_posted=job_listing.date_posted, date_scraped=datetime.utcnow(),
+                    raw_description=job_listing.raw_description,
+                    required_skills=skills.get("backend", []) + skills.get("frontend", []),
+                    technologies=skills.get("cloud", []),
+                    ai_ml_keywords=skills.get("ai", []) + skills.get("ml", []),
+                    salary_range=job_listing.salary_range,
+                    employment_type=job_listing.employment_type,
+                    relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
+                    is_active=True,
+                )
+                db.add(job)
+                jobs_added += 1
+                scrape_progress.update({
+                    "step": f"Processing Google Jobs ({idx + 1}/{len(jobs)})...",
+                    "progress": 30 + int((idx + 1) / len(jobs) * 60) if jobs else 90,
+                    "current_job": f"{job_listing.title[:30]} @ {job_listing.company}",
+                    "jobs_added": jobs_added,
+                })
+            except Exception as e:
+                logger.error(f"Error processing Google job: {e}")
+
+        db.commit()
+        scrape_progress = {"status": "completed", "step": "Done!", "progress": 100, "total": 100,
+                          "jobs_found": len(jobs), "jobs_added": jobs_added, "current_job": ""}
+    except Exception as e:
+        logger.error(f"SerpAPI scrape failed: {e}")
+        scrape_progress = {"status": "failed", "step": f"Error: {str(e)}", "progress": 0,
+                          "total": 0, "jobs_found": 0, "jobs_added": 0, "current_job": ""}
     finally:
         db.close()
 
