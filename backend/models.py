@@ -35,8 +35,10 @@ class Job(Base):
     bonus_skills = Column(JSON)  # List of nice-to-have skills
     technologies = Column(JSON)  # Cloud/DevOps tech stack
     ai_ml_keywords = Column(JSON)  # AI/ML specific terms
-    backend_skills = Column(JSON)  # Backend languages/frameworks
-    frontend_skills = Column(JSON)  # Frontend languages/frameworks
+    backend_skills = Column(JSON)  # Backend languages/frameworks/libraries
+    frontend_skills = Column(JSON)  # Frontend languages/frameworks/libraries
+    databases = Column(JSON)  # Database technologies
+    tools = Column(JSON)  # Dev tools & platforms
 
     # Metadata
     salary_range = Column(String(255))

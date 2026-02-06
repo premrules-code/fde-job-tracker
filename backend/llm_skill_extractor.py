@@ -44,36 +44,41 @@ if ANTHROPIC_API_KEY:
         logger.warning(f"Failed to initialize Anthropic: {e}")
 
 SKILL_CATEGORIES = {
-    "ai_ml": "AI & Machine Learning: LLMs (Claude, GPT, ChatGPT, Gemini), AI agents, agentic systems, RAG, prompt engineering, fine-tuning, embeddings, vector databases (Pinecone, Weaviate, Chroma), LangChain, LlamaIndex, AI safety, ML frameworks (PyTorch, TensorFlow, scikit-learn), deep learning, neural networks, NLP, computer vision, MLOps, transformers, hugging face",
-    "backend": "Backend development: Python, Java, Go, Golang, Rust, Node.js, Ruby, PHP, FastAPI, Flask, Django, Spring Boot, Express, APIs, REST, GraphQL, gRPC, databases (PostgreSQL, MySQL, MongoDB, Redis), microservices, system design, distributed systems, message queues, Kafka",
-    "frontend": "Frontend development: JavaScript, TypeScript, React, Vue, Angular, Next.js, Svelte, HTML, CSS, Tailwind, UI/UX, web development, mobile development, React Native, responsive design",
-    "cloud": "Cloud & DevOps: AWS (EC2, S3, Lambda, ECS, EKS), GCP (BigQuery, Cloud Run, GKE), Azure, Kubernetes, Docker, CI/CD, GitHub Actions, Terraform, Ansible, serverless, infrastructure as code, monitoring, Datadog, observability",
-    "soft_skills": "Soft skills & FDE traits: customer-facing, enterprise deployment, POC, demos, technical consulting, solution architecture, implementation, integration, stakeholder management, communication, presentation, discovery, requirements gathering, problem-solving, collaboration, leadership",
-    "fde_specific": "FDE/Field specific: forward deployed, field engineering, professional services, technical account management, customer success, onboarding, white glove, hands-on deployment, production workflows",
-    "data_pipelines": "Data Engineering: data pipelines, ETL, ELT, Spark, Kafka, Airflow, dbt, data warehouse, Snowflake, BigQuery, Redshift, data modeling, analytics, Tableau, Looker, streaming, batch processing",
+    "ai_ml": "AI & ML: LLMs, Claude, GPT, Gemini, LangChain, LlamaIndex, PyTorch, TensorFlow, scikit-learn, RAG, embeddings, vector databases, Pinecone, Weaviate, Chroma, NLP, computer vision, AI agents",
+    "backend": "Backend: Python, Java, Go, Rust, Node.js, FastAPI, Django, Flask, Express, Spring Boot, pandas, numpy, sqlalchemy, boto3, APIs, REST, GraphQL, microservices",
+    "frontend": "Frontend: React, Vue, Angular, Next.js, Svelte, TypeScript, JavaScript, Tailwind, Material-UI, Redux, Zustand, webpack, vite",
+    "cloud": "Cloud & DevOps: AWS, GCP, Azure, S3, Lambda, EC2, ECS, EKS, BigQuery, Kubernetes, Docker, Terraform, GitHub Actions, GitLab CI, Datadog, Grafana",
+    "databases": "Databases: PostgreSQL, MySQL, MongoDB, Redis, Elasticsearch, DynamoDB, Cassandra, Neo4j, Supabase, Firebase",
+    "tools": "Dev Tools: Git, GitHub, GitLab, Jira, Confluence, Notion, Figma, Postman, Swagger, Linux, Bash, VS Code",
+    "soft_skills": "Soft Skills: customer-facing, stakeholder management, presentation, communication, problem-solving, collaboration, leadership",
+    "fde_specific": "FDE Specific: forward deployed, field engineering, POC, demos, enterprise deployment, implementation, integration, onboarding",
+    "data_pipelines": "Data Engineering: Spark, Kafka, Airflow, dbt, Snowflake, BigQuery, Redshift, Databricks, ETL, streaming",
 }
 
-EXTRACTION_PROMPT = """Extract skills and technologies from this Forward Deployed Engineer job description.
+EXTRACTION_PROMPT = """Extract specific tools, libraries, frameworks, and technologies from this job description.
 
 Categories:
-- ai_ml: AI & ML technologies (Claude, GPT, LLMs, AI agents, RAG, prompt engineering, LangChain, PyTorch, TensorFlow, NLP, computer vision, MLOps, embeddings, vector databases)
-- backend: Backend languages & frameworks (Python, Java, Go, Rust, Node.js, FastAPI, Django, Flask, Spring, APIs, REST, GraphQL, PostgreSQL, MongoDB, Redis, microservices)
-- frontend: Frontend technologies (JavaScript, TypeScript, React, Vue, Angular, Next.js, Svelte, Tailwind, CSS, HTML)
-- cloud: Cloud & DevOps (AWS, GCP, Azure, Kubernetes, Docker, CI/CD, Terraform, serverless, GitHub Actions, monitoring)
-- soft_skills: Communication & collaboration (customer-facing, stakeholder management, presentation, problem-solving, leadership, teamwork)
-- fde_specific: FDE-specific terms (forward deployed, field engineering, POC, demos, enterprise deployment, implementation, integration, onboarding)
-- data_pipelines: Data engineering (ETL, data pipelines, Spark, Kafka, Airflow, dbt, Snowflake, BigQuery, data warehouse, analytics)
+- ai_ml: LLMs & AI (claude, gpt-4, gemini, llama, mistral, openai api, anthropic api, langchain, llamaindex, huggingface, transformers, pytorch, tensorflow, scikit-learn, rag, vector databases, pinecone, weaviate, chroma, embeddings, fine-tuning, prompt engineering, ai agents, computer vision, nlp, opencv, spacy)
+- backend: Languages, frameworks & libraries (python, java, go, rust, node.js, ruby, fastapi, django, flask, express, spring boot, gin, pandas, numpy, sqlalchemy, asyncio, celery, redis-py, boto3, requests, pydantic)
+- frontend: UI frameworks & libraries (react, vue, angular, next.js, svelte, typescript, javascript, tailwind, material-ui, chakra-ui, redux, zustand, webpack, vite, jest, cypress, storybook)
+- cloud: Cloud services & DevOps tools (aws, gcp, azure, s3, lambda, ec2, ecs, eks, rds, dynamodb, sqs, sns, bigquery, cloud run, gke, kubernetes, docker, terraform, pulumi, ansible, github actions, gitlab ci, jenkins, argocd, datadog, grafana, prometheus, splunk)
+- databases: Databases & data stores (postgresql, mysql, mongodb, redis, elasticsearch, cassandra, neo4j, pinecone, supabase, firebase, dynamodb)
+- tools: Dev tools & platforms (git, github, gitlab, jira, confluence, notion, figma, postman, insomnia, swagger, linux, bash, vim, vscode)
+- soft_skills: People skills (customer-facing, stakeholder management, presentation, communication, problem-solving, collaboration, leadership, mentoring)
+- fde_specific: FDE/Field terms (forward deployed, field engineering, poc, demos, enterprise deployment, implementation, integration, onboarding, technical consulting, solution architecture)
+- data_pipelines: Data engineering (spark, kafka, airflow, dbt, snowflake, bigquery, redshift, databricks, fivetran, airbyte, etl, streaming, batch processing, data warehouse)
 
 Rules:
-1. Extract SPECIFIC technologies, tools, and frameworks mentioned
-2. Normalize: "JS" → "javascript", "K8s" → "kubernetes", "Postgres" → "postgresql"
-3. Return lowercase skill names
-4. Put each skill in ONE category (most relevant)
-5. Max 10 skills per category
-6. Skip generic terms like "experience", "skills", "proficiency"
+1. Extract SPECIFIC tools, libraries, frameworks, and services mentioned (not generic terms)
+2. Normalize names: "JS" → "javascript", "K8s" → "kubernetes", "Postgres" → "postgresql", "AWS S3" → "s3"
+3. Return lowercase
+4. Include version-specific tools: "python 3.11" → "python", "react 18" → "react"
+5. Extract specific cloud services: "AWS Lambda" → "lambda", "Google BigQuery" → "bigquery"
+6. Max 15 skills per category
+7. Skip generic words: "experience", "knowledge", "proficiency", "understanding"
 
-Return ONLY valid JSON (no markdown, no explanation):
-{"ai_ml": ["claude", "gpt-4", "rag", "langchain"], "backend": ["python", "postgresql", "fastapi"], "frontend": ["react", "typescript"], "cloud": ["aws", "kubernetes", "docker"], "soft_skills": ["customer-facing", "stakeholder management"], "fde_specific": ["enterprise deployment", "poc"], "data_pipelines": ["snowflake", "airflow"]}
+Return ONLY valid JSON:
+{"ai_ml": ["claude", "langchain", "pinecone", "pytorch"], "backend": ["python", "fastapi", "pandas", "sqlalchemy"], "frontend": ["react", "typescript", "tailwind"], "cloud": ["aws", "s3", "lambda", "kubernetes", "docker", "terraform", "github actions"], "databases": ["postgresql", "redis", "mongodb"], "tools": ["git", "jira", "postman"], "soft_skills": ["customer-facing", "stakeholder management"], "fde_specific": ["poc", "enterprise deployment"], "data_pipelines": ["snowflake", "airflow"]}
 
 Job Description:
 """

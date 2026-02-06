@@ -12,6 +12,8 @@ import {
   Cloud,
   Monitor,
   Server,
+  Database,
+  Wrench,
 } from 'lucide-react';
 import type { Job } from '../api';
 
@@ -59,6 +61,8 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
   const hasBackendSkills = job.backend_skills && job.backend_skills.length > 0;
   const hasFrontendSkills = job.frontend_skills && job.frontend_skills.length > 0;
   const hasTechSkills = job.technologies && job.technologies.length > 0;
+  const hasDatabases = job.databases && job.databases.length > 0;
+  const hasTools = job.tools && job.tools.length > 0;
   // Fallback to required_skills for legacy data
   const hasRequiredSkills = !hasBackendSkills && !hasFrontendSkills && job.required_skills && job.required_skills.length > 0;
 
@@ -108,7 +112,7 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
 
       {/* Skills Section - More Prominent */}
       <Box mb="4" p="3" style={{ background: 'var(--gray-a2)', borderRadius: 'var(--radius-3)' }}>
-        <Grid columns={{ initial: '1', sm: '2', md: '4' }} gap="3">
+        <Grid columns={{ initial: '1', sm: '2', md: '3' }} gap="3">
           {/* AI/ML Skills */}
           {hasAiMlSkills && (
             <Box>
@@ -187,6 +191,40 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
               <Flex gap="1" wrap="wrap">
                 {job.technologies?.map((skill) => (
                   <Badge key={skill} size="1" variant="soft" color="orange" radius="full">
+                    {skill}
+                  </Badge>
+                ))}
+              </Flex>
+            </Box>
+          )}
+
+          {/* Databases */}
+          {hasDatabases && (
+            <Box>
+              <Flex gap="1" align="center" mb="2">
+                <Database size={14} style={{ color: 'var(--green-11)' }} />
+                <Text size="1" weight="bold" color="green">Databases</Text>
+              </Flex>
+              <Flex gap="1" wrap="wrap">
+                {job.databases?.map((skill) => (
+                  <Badge key={skill} size="1" variant="soft" color="green" radius="full">
+                    {skill}
+                  </Badge>
+                ))}
+              </Flex>
+            </Box>
+          )}
+
+          {/* Tools */}
+          {hasTools && (
+            <Box>
+              <Flex gap="1" align="center" mb="2">
+                <Wrench size={14} style={{ color: 'var(--gray-11)' }} />
+                <Text size="1" weight="bold" color="gray">Tools</Text>
+              </Flex>
+              <Flex gap="1" wrap="wrap">
+                {job.tools?.map((skill) => (
+                  <Badge key={skill} size="1" variant="soft" color="gray" radius="full">
                     {skill}
                   </Badge>
                 ))}

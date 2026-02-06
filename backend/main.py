@@ -77,6 +77,8 @@ class JobResponse(BaseModel):
     ai_ml_keywords: Optional[List[str]]
     backend_skills: Optional[List[str]]
     frontend_skills: Optional[List[str]]
+    databases: Optional[List[str]]
+    tools: Optional[List[str]]
     salary_range: Optional[str]
     employment_type: Optional[str]
     remote_status: Optional[str]
@@ -569,6 +571,8 @@ def run_rss_scrape_with_progress(location: str, days: int):
                     backend_skills=skills.get("backend", []),
                     frontend_skills=skills.get("frontend", []),
                     technologies=skills.get("cloud", []),
+                    databases=skills.get("databases", []),
+                    tools=skills.get("tools", []),
                     ai_ml_keywords=skills.get("ai_ml", []),
                     relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
                     is_active=True,
@@ -711,6 +715,8 @@ def run_lever_scrape_with_progress(location: str, max_results: int):
                     backend_skills=skills.get("backend", []),
                     frontend_skills=skills.get("frontend", []),
                     technologies=skills.get("cloud", []),
+                    databases=skills.get("databases", []),
+                    tools=skills.get("tools", []),
                     ai_ml_keywords=skills.get("ai_ml", []),
                     relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
                     is_active=True,
@@ -877,6 +883,8 @@ def run_rapidapi_scrape_with_progress(days: int, max_results: int):
                     backend_skills=skills.get("backend", []),
                     frontend_skills=skills.get("frontend", []),
                     technologies=skills.get("cloud", []),
+                    databases=skills.get("databases", []),
+                    tools=skills.get("tools", []),
                     ai_ml_keywords=skills.get("ai_ml", []),
                     relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
                     is_active=True,
@@ -977,6 +985,8 @@ def run_wellfound_scrape(max_results: int):
                     backend_skills=skills.get("backend", []),
                     frontend_skills=skills.get("frontend", []),
                     technologies=skills.get("cloud", []),
+                    databases=skills.get("databases", []),
+                    tools=skills.get("tools", []),
                     ai_ml_keywords=skills.get("ai_ml", []),
                     salary_range=job_listing.salary_range,
                     relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
@@ -1055,6 +1065,8 @@ def run_ycombinator_scrape(max_results: int):
                     backend_skills=skills.get("backend", []),
                     frontend_skills=skills.get("frontend", []),
                     technologies=skills.get("cloud", []),
+                    databases=skills.get("databases", []),
+                    tools=skills.get("tools", []),
                     ai_ml_keywords=skills.get("ai_ml", []),
                     relevance_score=0.9 if "forward deploy" in job_listing.title.lower() else 0.7,
                     is_active=True,
@@ -1158,6 +1170,8 @@ def run_serpapi_scrape(days: int, max_results: int):
                     backend_skills=skills.get("backend", []),
                     frontend_skills=skills.get("frontend", []),
                     technologies=skills.get("cloud", []),
+                    databases=skills.get("databases", []),
+                    tools=skills.get("tools", []),
                     ai_ml_keywords=skills.get("ai_ml", []),
                     salary_range=job_listing.salary_range,
                     employment_type=job_listing.employment_type,
