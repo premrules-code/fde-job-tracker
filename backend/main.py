@@ -22,6 +22,7 @@ from scrapers import (
     serpapi_scraper,
 )
 from skill_extractor import skill_extractor
+from llm_skill_extractor import llm_skill_extractor, extract_skills_for_job
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -551,7 +552,7 @@ def run_rss_scrape_with_progress(location: str, days: int):
                 # Extract skills from description
                 skills = {}
                 if job_listing.raw_description:
-                    skills = skill_extractor.extract_skills(job_listing.raw_description)
+                    skills = extract_skills_for_job(job_listing.raw_description)
 
                 # Create job record
                 job = Job(
@@ -693,7 +694,7 @@ def run_lever_scrape_with_progress(location: str, max_results: int):
                 # Extract skills from description
                 skills = {}
                 if raw_desc:
-                    skills = skill_extractor.extract_skills(raw_desc)
+                    skills = extract_skills_for_job(raw_desc)
 
                 # Create job record
                 job = Job(
@@ -859,7 +860,7 @@ def run_rapidapi_scrape_with_progress(days: int, max_results: int):
                 # Extract skills from description
                 skills = {}
                 if raw_desc:
-                    skills = skill_extractor.extract_skills(raw_desc)
+                    skills = extract_skills_for_job(raw_desc)
 
                 # Create job record
                 job = Job(
@@ -965,7 +966,7 @@ def run_wellfound_scrape(max_results: int):
 
                 details = wellfound_scraper.get_job_details(job_listing.job_url)
                 raw_desc = details.get("raw_description", "") if details else ""
-                skills = skill_extractor.extract_skills(raw_desc) if raw_desc else {}
+                skills = extract_skills_for_job(raw_desc) if raw_desc else {}
 
                 job = Job(
                     title=job_listing.title, company=job_listing.company, location=job_listing.location,
@@ -1043,7 +1044,7 @@ def run_ycombinator_scrape(max_results: int):
 
                 details = ycombinator_scraper.get_job_details(job_listing.job_url)
                 raw_desc = details.get("raw_description", "") if details else ""
-                skills = skill_extractor.extract_skills(raw_desc) if raw_desc else {}
+                skills = extract_skills_for_job(raw_desc) if raw_desc else {}
 
                 job = Job(
                     title=job_listing.title, company=job_listing.company, location=job_listing.location,
@@ -1078,6 +1079,18 @@ def run_ycombinator_scrape(max_results: int):
                           "total": 0, "jobs_found": 0, "jobs_added": 0, "current_job": ""}
     finally:
         db.close()
+
+
+# LLM Skill Extraction Status Endpoint
+
+@app.get("/api/llm/status")
+async def get_llm_status():
+    """Check LLM skill extraction status and stats."""
+    return {
+        "available": llm_skill_extractor.is_available(),
+        "stats": llm_skill_extractor.get_stats(),
+        "message": "LLM extraction enabled (Claude Haiku)" if llm_skill_extractor.is_available() else "Set ANTHROPIC_API_KEY to enable LLM extraction",
+    }
 
 
 # SerpAPI Google Jobs Scraping Endpoint
@@ -1131,7 +1144,8 @@ def run_serpapi_scrape(days: int, max_results: int):
                 if existing:
                     continue
 
-                skills = skill_extractor.extract_skills(job_listing.raw_description) if job_listing.raw_description else {}
+                # Use LLM extraction if available, fallback to regex
+                skills = extract_skills_for_job(job_listing.raw_description) if job_listing.raw_description else {}
 
                 job = Job(
                     title=job_listing.title, company=job_listing.company, location=job_listing.location,

@@ -14,14 +14,8 @@ load_dotenv(Path(__file__).parent / ".env")
 
 logger = logging.getLogger(__name__)
 
-# Try to import LLM extractor
-try:
-    from llm_skill_extractor import LLMSkillExtractor
-    extractor = LLMSkillExtractor()
-except:
-    extractor = None
-
 from skill_extractor import skill_extractor, section_parser
+from llm_skill_extractor import extract_skills_for_job, llm_skill_extractor
 
 
 def run_jobspy_scrape(location: str = "San Francisco Bay Area", days: int = 30, progress_callback=None) -> Dict:
@@ -93,18 +87,11 @@ def run_jobspy_scrape(location: str = "San Francisco Bay Area", days: int = 30, 
                 else:
                     description = str(description)
 
-                # Extract skills
+                # Extract skills using LLM (with regex fallback)
                 skills = {}
                 sections = {}
                 if description and len(description) > 50:
-                    if extractor and extractor.is_available():
-                        try:
-                            skills = extractor.extract_skills(description)
-                        except:
-                            skills = skill_extractor.extract_skills(description)
-                    else:
-                        skills = skill_extractor.extract_skills(description)
-
+                    skills = extract_skills_for_job(description)
                     try:
                         sections = section_parser.parse_sections(description)
                     except:
