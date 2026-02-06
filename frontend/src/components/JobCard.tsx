@@ -14,6 +14,7 @@ import {
   Server,
   Database,
   Wrench,
+  Tag,
 } from 'lucide-react';
 import type { Job } from '../api';
 
@@ -63,6 +64,7 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
   const hasTechSkills = job.technologies && job.technologies.length > 0;
   const hasDatabases = job.databases && job.databases.length > 0;
   const hasTools = job.tools && job.tools.length > 0;
+  const hasOther = job.other_skills && job.other_skills.length > 0;
   // Fallback to required_skills for legacy data
   const hasRequiredSkills = !hasBackendSkills && !hasFrontendSkills && job.required_skills && job.required_skills.length > 0;
 
@@ -225,6 +227,23 @@ export const JobCard = ({ job, onSelect }: JobCardProps) => {
               <Flex gap="1" wrap="wrap">
                 {job.tools?.map((skill) => (
                   <Badge key={skill} size="1" variant="soft" color="gray" radius="full">
+                    {skill}
+                  </Badge>
+                ))}
+              </Flex>
+            </Box>
+          )}
+
+          {/* Other (Industries, Certifications, etc.) */}
+          {hasOther && (
+            <Box>
+              <Flex gap="1" align="center" mb="2">
+                <Tag size={14} style={{ color: 'var(--yellow-11)' }} />
+                <Text size="1" weight="bold" color="yellow">Other</Text>
+              </Flex>
+              <Flex gap="1" wrap="wrap">
+                {job.other_skills?.map((skill) => (
+                  <Badge key={skill} size="1" variant="soft" color="yellow" radius="full">
                     {skill}
                   </Badge>
                 ))}

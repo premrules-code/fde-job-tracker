@@ -53,6 +53,7 @@ SKILL_CATEGORIES = {
     "soft_skills": "Soft Skills: customer-facing, stakeholder management, presentation, communication, problem-solving, collaboration, leadership",
     "fde_specific": "FDE Specific: forward deployed, field engineering, POC, demos, enterprise deployment, implementation, integration, onboarding",
     "data_pipelines": "Data Engineering: Spark, Kafka, Airflow, dbt, Snowflake, BigQuery, Redshift, Databricks, ETL, streaming",
+    "other": "Other: Industries, certifications, methodologies, platforms, security, protocols, and miscellaneous requirements",
 }
 
 EXTRACTION_PROMPT = """Extract specific tools, libraries, frameworks, and technologies from this job description.
@@ -67,6 +68,7 @@ Categories:
 - soft_skills: People skills (customer-facing, stakeholder management, presentation, communication, problem-solving, collaboration, leadership, mentoring)
 - fde_specific: FDE/Field terms (forward deployed, field engineering, poc, demos, enterprise deployment, implementation, integration, onboarding, technical consulting, solution architecture)
 - data_pipelines: Data engineering (spark, kafka, airflow, dbt, snowflake, bigquery, redshift, databricks, fivetran, airbyte, etl, streaming, batch processing, data warehouse)
+- other: Everything else - industries (healthcare, fintech, insurance, e-commerce, legal, government, defense), certifications (aws certified, pmp, cissp, soc2, hipaa, gdpr), methodologies (agile, scrum, kanban, lean, six sigma), platforms (salesforce, stripe, twilio, segment, hubspot, zendesk, shopify, workday), security (oauth, jwt, sso, saml, encryption, rbac), protocols (http, grpc, websocket, mqtt), and any other specific terms
 
 Rules:
 1. Extract SPECIFIC tools, libraries, frameworks, and services mentioned (not generic terms)
@@ -78,7 +80,7 @@ Rules:
 7. Skip generic words: "experience", "knowledge", "proficiency", "understanding"
 
 Return ONLY valid JSON:
-{"ai_ml": ["claude", "langchain", "pinecone", "pytorch"], "backend": ["python", "fastapi", "pandas", "sqlalchemy"], "frontend": ["react", "typescript", "tailwind"], "cloud": ["aws", "s3", "lambda", "kubernetes", "docker", "terraform", "github actions"], "databases": ["postgresql", "redis", "mongodb"], "tools": ["git", "jira", "postman"], "soft_skills": ["customer-facing", "stakeholder management"], "fde_specific": ["poc", "enterprise deployment"], "data_pipelines": ["snowflake", "airflow"]}
+{"ai_ml": ["claude", "langchain", "pinecone"], "backend": ["python", "fastapi", "pandas"], "frontend": ["react", "typescript"], "cloud": ["aws", "s3", "lambda", "kubernetes"], "databases": ["postgresql", "redis"], "tools": ["git", "jira"], "soft_skills": ["customer-facing"], "fde_specific": ["poc", "enterprise deployment"], "data_pipelines": ["snowflake", "airflow"], "other": ["healthcare", "agile", "soc2", "stripe"]}
 
 Job Description:
 """

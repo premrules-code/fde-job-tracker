@@ -31,6 +31,7 @@ export interface Job {
   frontend_skills: string[] | null;
   databases: string[] | null;
   tools: string[] | null;
+  other_skills: string[] | null;
   salary_range: string | null;
   employment_type: string | null;
   remote_status: string | null;

@@ -39,6 +39,7 @@ class Job(Base):
     frontend_skills = Column(JSON)  # Frontend languages/frameworks/libraries
     databases = Column(JSON)  # Database technologies
     tools = Column(JSON)  # Dev tools & platforms
+    other_skills = Column(JSON)  # Industries, certifications, methodologies, etc.
 
     # Metadata
     salary_range = Column(String(255))
